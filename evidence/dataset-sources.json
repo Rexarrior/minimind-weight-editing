@@ -1,0 +1,26 @@
+{
+  "tiny.txt": {
+    "url": "https://huggingface.co/datasets/roneneldan/TinyStories/resolve/main/TinyStories-valid.txt",
+    "sha256": "94e431816c4cce81ff71e4408ff8d3bda9a42e8d2663986697c3954288cb38b4"
+  },
+  "blimp.zip": {
+    "url": "https://raw.githubusercontent.com/alexwarstadt/blimp/master/BLiMP.zip",
+    "sha256": "172a1a714d72e72a89e8384dd531483f3d0f8a9aee3d33dccaf7992d8cecbb73"
+  },
+  "copa.parquet": {
+    "url": "https://huggingface.co/datasets/aps/super_glue/resolve/main/copa/validation-00000-of-00001.parquet",
+    "sha256": "247a7f586c5cc706eb18a15ad20f1a5b543b9c7af0df4161df138a25edc95d67"
+  },
+  "train.parquet": {
+    "url": "https://huggingface.co/datasets/aps/super_glue/resolve/main/copa/train-00000-of-00001.parquet",
+    "sha256": "8e243c3a2428837f5725f19885ddf3a83eecb6874474606a2ca1d1e6dd5bd6d7"
+  },
+  "test.parquet": {
+    "url": "https://huggingface.co/datasets/aps/super_glue/resolve/main/copa/test-00000-of-00001.parquet",
+    "sha256": "7d7d6e12adc051ed21587afb2ddad9a9e733fbc8c43ffb68fae52129d04828b9"
+  },
+  "COPA-resources.tgz": {
+    "url": "https://asgordon.github.io/downloads/COPA-resources.tgz",
+    "sha256": "5145348834d2081ad90da0397d1db3d70fa044e506bd8ce224194d24b04cdbbe"
+  }
+}

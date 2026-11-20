@@ -1,0 +1,17 @@
+{
+  "bytes": 63656672,
+  "sha256": "4a46f5c645f9497f299b47f5141235a5564d8a2e3a46c6cb11e7f8bb7f896410",
+  "parent_sha256": "bc19179531b4a923aa61205bb00291b0c152984c6936dbba6ceb3233da4def7b",
+  "total_changed_bytes": 1276633,
+  "tensors_changed_bytes": {
+    "blk.8.attn_norm.weight": 2258,
+    "blk.9.attn_norm.weight": 2262,
+    "blk.10.attn_norm.weight": 2303,
+    "blk.11.attn_norm.weight": 2295,
+    "blk.12.attn_norm.weight": 2284,
+    "blk.13.attn_norm.weight": 2298,
+    "blk.14.attn_norm.weight": 2302,
+    "blk.15.attn_norm.weight": 2302,
+    "blk.15.ffn_down.weight": 1258329
+  }
+}

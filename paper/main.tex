@@ -1,0 +1,178 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype}
+\usepackage[letterpaper,margin=0.97in]{geometry}
+\usepackage{amsmath,booktabs,tabularx}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{xcolor}
+\definecolor{linkblue}{HTML}{174D77}
+\usepackage[colorlinks=true,allcolors=linkblue]{hyperref}
+\input{links}
+\hypersetup{pdftitle={What transfers after analytical weight editing? A language repair study in MiniMind2}}
+\setlength{\emergencystretch}{1.5em}
+\setlength{\textfloatsep}{13pt plus 3pt minus 2pt}
+\setlength{\intextsep}{13pt plus 3pt minus 2pt}
+\newcommand{\ppl}{\mathrm{PPL}}
+\newcommand{\na}{\textemdash}
+\raggedbottom
+\begin{document}
+\begin{center}
+{\LARGE\bfseries What transfers after analytical weight editing?\par}
+\vspace{3pt}{\Large A language repair study in MiniMind2\par}
+\end{center}
+\begin{abstract}
+Can direct changes to a small quantized language model correct repetitive answers and improve English beyond the prompts used to design the changes? We followed an editing sequence from token-row rescaling to constrained feed-forward updates and offline distillation. In MiniMind2 Q4, an early edit removed detectable word loops on 360 development presentations and raised exact copying from 0 to 47 of 72. Yet it assigned lower probability than the original to every one of 21,990 TinyStories validation stories. Subsequent analytical fits to narrative text reversed that loss. The final checkpoint reduced corpus perplexity from 24.52 to 11.98, reached 12/96 on familiar short-answer prompts and preserved every previously correct answer from its immediate predecessor on 392 development presentations. Changes outside those tests were small. Grammatical preferences on BLiMP rose from 59.19\% to 59.55\%, causal choices on COPA fell from 252/500 to 251/500, and post-freeze short answers improved from 4/40 to 5/40 relative to the preceding checkpoint. These results distinguish three outcomes of weight editing in this model: control of observable repetition, improved prediction within the calibration domain, and limited transfer to other English tasks.
+\end{abstract}
+
+\section{Introduction}
+A small model that emits repeated markup can look incapable of answering in English. Removing that markup makes its output easier to read, but it leaves open two questions. Did the edit improve what the model predicts about English text? Can it retain useful answers as other weights change? These questions matter whenever a researcher selects edits by inspecting generated examples. The most visible failure can disappear while less visible regressions spread across the model.
+
+We studied these questions in two publicly available MiniMind2 GGUF files \citep{minimind}. We first examined whether lexical and output-scale edits addressed the failure in both files. We then followed the more responsive checkpoint, Q4, through a series of feed-forward edits. We evaluated three kinds of evidence separately: trajectories replayed during development, next-token predictions on stories from the same domain as the fitting corpus, and performance on English tasks with different demands. The experiment provides a case study of the trade-offs in one model family. It also yields a matched control for preserving successful trajectories and an example in which the beginning-of-sequence convention reverses the conclusion of a likelihood comparison.
+
+\section{Related work}
+Takehi et al. reported that a language model editing the weights of Qwen3.5-0.8B could suppress reasoning loops and raise MATH-500 accuracy from 7.9\% to 48.1\% under fixed sampling settings \citep{takehi}. Zhang et al. edited token embeddings in a robot policy, raising success from 86.3\% to 92.0\% on 765 held-out paraphrases in the best of three initial sessions. Their subsequent sessions yielded much less consistent gains \citep{zhang}. Both studies link a visible failure to a particular intervention. In MiniMind2 the input embedding is tied to the output vocabulary projection. A lexical-row change can therefore alter the probability of generating a token even when that token is absent from the instruction. We test the effect on both the unwanted token and the intended answer.
+
+ROME showed that a rank-one change to an MLP can edit a factual association, and evaluated both generalization and side effects \citep{rome}. AlphaEdit projects updates into the null space of representations associated with knowledge to be preserved \citep{alphaedit}. We use related linear algebra to protect specific dialogue prefixes during a rollback. The protected question here is whether a quantized model will regenerate an entire answer. Even an exact local constraint on one hidden state leaves subsequent, potentially changed prefixes to be tested.
+
+The later experiments also draw on knowledge distillation, which transfers information from a teacher's predictive distribution into a student \citep{hinton}. TinyStories was designed to study small models in a restricted narrative domain \citep{tiny}. We use a frozen model trained on that corpus to derive token-level targets, then fit those targets to MiniMind2 activations with regularized linear solves. This distinction matters for interpreting transfer: the final checkpoint is independent of the teacher at inference, while its weights incorporate predictions from that teacher during construction.
+
+\section{Materials and methods}
+\subsection{Checkpoints and decoding}
+The two GGUF files were MiniMind2-Small (51,909,696 bytes, hidden width 512) and MiniMind2 Q4 (63,656,672 bytes, hidden width 768). Their different architectures and storage formats preclude a controlled comparison of quantization. The distributed files specified the \texttt{qwen2} pre-tokenizer, whereas \texttt{gpt-2} reproduced the author's tokenizer on the evaluation inputs. We aligned this metadata before evaluating either baseline. The tensor bytes were unchanged, and we checked all 6,400 vocabulary positions and the input token IDs on the short matrix. Throughout this paper, \emph{original} denotes the corresponding aligned file.
+
+We used greedy decoding in llama.cpp (seed 123, 96-token generation cap) and evaluated saved GGUFs after quantization. The primary dialogue template inserts an empty reasoning block before the assistant answer. We also tested the author's template, which omits this block, on specified controls. The TinyStories, BLiMP and COPA likelihood tests score raw text independently of the dialogue template.
+
+\subsection{Evaluation protocol}
+The strict English test scores 96 prompts by exact answer. The copy test presents 24 phrases under three instructions, giving 72 presentations. A broader set of 360 includes these 168, additional open and closed prompts, and 52 prompts each presented under two templates. Only 308 of the 360 have exact references. An additional 32 prompts have 24 references. R5 used all 392 for preservation. We recorded empty answers and repetition in every presentation, including open questions. The word detector flags a repeated four-unit sequence or three consecutive copies of a one- to three-unit fragment. A later detector also flags four consecutive copies of a two- to twelve-letter fragment. We separately recorded how often generation reached the cap on 22 language probes. After freezing R5, we wrote 48 more prompts in familiar task families, of which 40 had exact answers.
+
+\begin{table}[tbp]\centering\small
+\caption{External test protocol. The first two columns give selection-set sizes. TinyStories and BLiMP selection items are part of their respective public evaluation corpora. COPA development and test items are disjoint.}\label{tab:data}
+\begin{tabularx}{\linewidth}{@{}lrrX@{}}\toprule
+Benchmark & First & Second & Full evaluation and scoring rule\\\midrule
+TinyStories & 100 & 1,000 & 21,990 validation stories (6,244,062 text tokens). Score each text token after a fresh BOS, omit EOS, and exponentiate token-weighted mean negative log-likelihood.\\
+BLiMP & 335 & 3,350 & 67,000 grammatical/ungrammatical sentence pairs in 67 paradigms. A pair earns credit when the grammatical sentence has strictly greater summed log probability.\\
+COPA & 400 & 100 & 500 test questions with public gold labels. Append \emph{because} or \emph{therefore} to the premise and choose the alternative with greater summed conditional log probability.\\\bottomrule
+\end{tabularx}
+\end{table}
+
+TinyStories measures prediction within a restricted genre \citep{tiny}. BLiMP probes grammatical contrasts with minimal sentence pairs \citep{blimp}. COPA asks which of two events better fits a cause or effect relation \citep{copa}. Table~\ref{tab:data} specifies the unit and decision rule for each. Perplexity on an excerpt from \emph{Alice's Adventures in Wonderland} (eight chunks, 2,040 scored positions) provided an early diagnostic. Because it uses a different context and scoring protocol, its values should be compared across checkpoints on that excerpt alone.
+
+We report absolute benchmark scores and paired gains and losses. A secondary index used in development summarizes three ratios to the original Q4, with equal weight on the log scale:
+\begin{equation}
+ I=\left((\ppl_0/\ppl)\,(B/B_0)\,(C/C_0)\right)^{1/3},
+ \label{eq:index}
+\end{equation}
+where $B$ and $C$ are BLiMP and COPA accuracy, respectively. To describe sampling variation, we used 4,000 paired bootstrap resamples, drawing stories, entire BLiMP paradigms and COPA questions within their respective benchmarks. We computed each checkpoint comparison on the same resampled units. These intervals condition on the checkpoints selected and corpora evaluated.
+
+\subsection{Weight interventions}
+\paragraph{Lexical and output-scale controls.}
+Frequent HTML fragments and code fences in the outputs suggested an immediate hypothesis: attenuating their shared vocabulary rows might reduce their recurrence. We scaled rows 30, 5540 and 1638 of the tied embedding by 0.55 and, for Q4, the end-of-sequence (EOS) row by 1.18. Separately, halving the final normalization gain scales all logits by one half at a fixed hidden state. This operation preserves their ordering in exact arithmetic while reducing confidence. We tested the two interventions separately as well as together, and compared the targeted rows with three unrelated rows of matched norm.
+
+\paragraph{Stopping and copying (R2 and R3).}
+Increasing EOS preference everywhere risked suppressing the first word of an answer. R2 used 72 states from repetition boundaries and 548 states from ordinary speech, prompt starts and copying. We projected loop features away from protected features and fitted a rank-one correction to the EOS margin against a competing token. Half the correction was written to columns 0--1023 of the final MLP down-projection, alongside lexical adjustments. R3 fitted token margins along complete prefixes, using successful copies, 72 synthetic copy/extraction examples and all seven next-weekday transitions in five wordings. We decoded the quantized checkpoints to detect early stops and newly introduced loops. The weekday examples are explicit supervision for the corresponding family in the strict test.
+
+\paragraph{Rollback and narrative calibration (R4).}
+The first rollback asked which aspects of the R3 update were necessary for known successes. Let $D=W_3-W_0$ be the change to the last down-projection. Seven successful strict answers and 47 successful copy presentations provided 309 distinct protected prefix states. SVD of their MLP inputs, retaining singular values above $10^{-4}$ of the largest, defined the projector $P$ onto their span. We evaluated $W_3-0.98D(I-P)$ and a uniform rollback of matched pre-quantization Frobenius norm. For any $h=Ph$, the projector leaves $W_3h$ unchanged before requantization.
+
+The released R4 followed a different construction. Starting with the original last MLP and output gain and eight edited vocabulary rows, we estimated conditional logit corrections from 400 TinyStories training stories (94,709 transitions, at most 256 tokens per story). For each next token, we compared observed counts with counts expected under MiniMind2, conditioning on the preceding token or one of 160 activation centroids. Rare contexts were shrunk towards corpus frequencies. Two regularized linear solves mapped the log-count ratios through the fixed embedding into residual directions and then from MLP features to a down-projection update. We penalized changes at protected dialogue states and replayed decoded answers. We also evaluated a causal-contrast variant using COPA training alternatives and an encoder variant using a frozen English sentence encoder to estimate affinities between premises and candidate words \citep{encoder}. The released checkpoint was the encoder variant. The projector pilot was a control and informed preservation targets.
+
+\paragraph{Analytical distillation and replay (R5).}
+Starting from the released R4, we estimated a suffix-frequency predictor from 69,516 TinyStories training stories, using up to four preceding tokens. A deterministic calibration sample of 2,000 stories yielded 517,611 transitions. The first teacher-conditioned fit used the first 1,080 of those stories with 192 principal directions of final-layer MLP activations. A second fit collected new activations from the edited candidate on the next 2,200 stories after the first 2,000, with up to 512 directions per output token. The fitting samples excluded normalized exact matches to validation and the prior calibration fragment.
+
+The frozen TinyStories-33M teacher \citep{teacher} uses a different tokenizer. At compatible byte offsets we mapped up to 80 candidate teacher tokens into MiniMind next-token IDs and assigned the unmapped mass according to MiniMind's distribution. The second fit mixed the resulting distribution (87\%), the student's prediction (8\%) and the observed next token (5\%). Per-token ridge regressions predicted centered log-probability corrections from MLP features. A regularized inverse of the tied output embedding mapped the predictions back to a residual update that could be written to the final MLP.
+
+We added a small causal correction estimated from 4,994 observed and length-matched shuffled continuation pairs and multiplied the attention input normalization gain by 1.06 in blocks 8--15. To protect R4 answers we regenerated the candidate on the 392 development presentations, collected the first failing token margins on affected trajectories, and solved for updates penalized by their effect on narrative states. We repeated full generation every three iterations. Only the deployed GGUF was used for final scoring. The R5 file differs from R4 in 1,276,633 bytes across nine tensors: the final MLP down-projection and the eight attention normalization vectors. All steps use direct edits or analytical fits without gradient optimization. The fitted stages use training text, explicit targets and pretrained teachers.
+
+\section{Results}
+\subsection{Suppressing markup and loops}
+The original Small and Q4 checkpoints each scored zero on strict English and copying (Table~\ref{tab:local}). On Small, the combined lexical and scale edit lowered Alice perplexity from 87,204 to 1,742 while exact answers remained at zero. On Q4 the final output gain alone lowered Alice perplexity to 1,852, whereas the lexical edit alone raised it to 27,323. The combined edit produced 24/72 exact copies on Q4. Those 24 successes represent 13 of the 24 underlying phrases succeeding at least once. Changing the template to the author's prefix erased all 24 successes.
+
+\begin{table}[tbp]\centering\small
+\caption{Early interventions. Strict and copy columns are exact-answer counts. Cap is the number of language probes reaching 96 generated tokens. The last column is perplexity on a single English excerpt.}\label{tab:local}
+\begin{tabular}{@{}lrrrr@{}}\toprule
+Checkpoint & Strict /96 & Copy /72 & Cap /22 & Alice PPL $\downarrow$\\\midrule
+Small original & 0 & 0 & 14 & 87,204\\
+Small lexical + scale & 0 & 0 & 11 & 1,742\\
+Q4 original & 0 & 0 & 15 & 13,579\\
+Q4 lexical + scale & 2 & 24 & 6 & 1,949\\
+Q4 R2 & 2 & 32 & 1 & 2,204\\
+Q4 R3 & 7 & 47 & 0 & 2,426\\\bottomrule
+\end{tabular}
+\end{table}
+
+On a separate 20-prompt control, targeted lexical scaling removed the unwanted markup from all 17 affected responses. Matched-norm scaling of unrelated rows left it in all 17. Removing the markup yielded zero correct answers on the 13 scorable questions. None of the six checkpoints in Table~\ref{tab:local} completed an autonomous agent scenario on any of three 48-item sets or completed a dialogue after a supplied tool call (0/24). Subsequent checkpoints were studied on language tasks.
+
+R2 reduced the number of answers hitting the cap to 1/22. An earlier attempt to increase stopping more aggressively had produced 18 empty answers on 40 prompts under the author's template. R3 brought the cap count to zero and eliminated detected word loops across all 360 development presentations. Four of its five new strict answers belonged to the explicitly targeted weekday family. On 24 additional prompts first scored after freezing R3, it gained one correct weekday and lost two copies, moving from 5/18 to 4/18 on the scorable subset. On an open question about a funnel under the author's template, R3 answered with \emph{Friday}. Specific token sequences had become easier to generate even in an inappropriate context.
+
+\subsection{Prediction across English benchmarks}
+R3's best short-answer performance to that point coincided with the worst external language-modeling result (Table~\ref{tab:external}). It raised mean negative log-likelihood on every TinyStories story relative to the original. On BLiMP it gained 5,978 pairs and lost 9,065, a net loss of 3,087. The COPA total changed by one, with 64 gains and 63 losses.
+
+\begin{table}[tbp]\centering\small
+\caption{Full Q4 evaluations. TinyStories PPL weights tokens across 21,990 stories. BLiMP and COPA columns report correct preferences. The index is defined in Eq.~\ref{eq:index}. The projector pilot has partial external measurements and is excluded from this table.}\label{tab:external}
+\begin{tabular}{@{}lrrrrrr@{}}\toprule
+ & TinyStories & BLiMP & COPA & Strict & Copy & Index\\[-2pt]
+Checkpoint & PPL $\downarrow$ & /67,000 & /500 & /96 & /72 & $I$\\\midrule
+Original                 & 24.524  & 39,658 & 252 & 0 & 0 & 1.0000\\
+R3                       & 214.478 & 36,571 & 253 & 7 & 47 & 0.4731\\
+R4 lexical finalist      & 17.189  & 40,249 & 252 & 9 & 48 & 1.1313\\
+R4 causal finalist       & 17.484  & 40,141 & 251 & 9 & 48 & 1.1224\\
+R4 released (encoder)    & 17.615  & 40,210 & 253 & 9 & 48 & 1.1233\\
+R5                       & 11.981  & 39,900 & 251 & 12 & 52 & 1.2706\\\bottomrule
+\end{tabular}
+\end{table}
+
+The direction of the R3 narrative effect depended on the scoring convention. On the same 100 stories, original/R3 perplexities were 24.10/212.17 with BOS and 40,133/2,604 without BOS. Both arms excluded the first text token from the score to keep the predicted positions identical. Omitting the initial context would have made R3 look like the better language model on this diagnostic.
+
+The projector rollback produced 8/96 strict answers and 49/72 copies, with zero word loops on those 168 presentations. A matched-size uniform rollback reached 3/96 and 45/72 and produced 15 loops. On the wider set of 360, the projector lost three previously correct answers and introduced two word loops. Its narrative perplexity remained 207.31 on a 1,000-story subset. In contrast, all three corpus-calibrated R4 finalists improved full TinyStories and BLiMP scores over the original. Release selection depended on a further criterion of improvement on each benchmark: the encoder variant cleared the original COPA count by one item. The lexical finalist had the highest composite score of the three.
+
+\subsection{What survived the final edit?}
+R5 reduced TinyStories perplexity from 24.524 to 11.981, with lower mean loss on all 21,990 stories than both original Q4 and R4. After removing every validation story used for candidate selection, the original/R5 perplexities were 24.516/11.971 on the other 20,890 stories. BLiMP improved slightly over the original, including after removing both selection subsets. R5 nevertheless lost 310 pairs relative to R4. COPA accuracy fell by one item relative to the original and two relative to R4 (Table~\ref{tab:paired}).
+
+\begin{table}[tbp]\centering\small
+\caption{Paired outcomes for R5. A gain or loss is a reversal on the same item against the indicated comparator. Historical and additional protection prompts were used in development. Post-freeze prompts were written after the final file hash was recorded.}\label{tab:paired}
+\begin{tabular}{@{}llrrrr@{}}\toprule
+Set & Comparator & Comparator hits & R5 hits & Gains & Losses\\\midrule
+BLiMP, full /67,000 & Original & 39,658 & 39,900 & 5,501 & 5,259\\
+BLiMP, other /63,315 & Original & 37,442 & 37,662 & 5,184 & 4,964\\
+BLiMP, full /67,000 & R4 & 40,210 & 39,900 & 4,107 & 4,417\\
+COPA test /500 & Original & 252 & 251 & 41 & 42\\\midrule
+Historical exact /308 & R4 & 74 & 88 & 14 & 0\\
+Additional exact /24 & R4 & 2 & 2 & 0 & 0\\
+Post-freeze exact /40 & R4 & 4 & 5 & 2 & 1\\\bottomrule
+\end{tabular}
+\end{table}
+
+The three R5-to-original component ratios in Eq.~\ref{eq:index} were 2.0469 for inverse perplexity, 1.0061 for BLiMP, and 0.9960 for COPA. Their geometric mean was 1.2706 (paired bootstrap 95\% interval 1.235--1.309). The COPA ratio interval was 0.926--1.071 and the BLiMP ratio interval was 0.965--1.065. The composite gain mostly reflects narrative prediction. The number of causal questions solved gives a different picture: both models got 130 of 250 cause questions correct, while R5 solved 121 effect questions against the original's 122.
+
+All previously exact R4 answers remained exact on the 392 development presentations. R5 showed zero empty answers and zero hits on either repetition detector there. The three new strict answers were a first-word extraction and two vehicle choices. On the 48 post-freeze prompts, both checkpoints again produced zero empty answers or detector hits. R5 correctly copied \emph{silver orchard} and extracted \emph{plum} from \emph{plum river}, but replaced R4's correct fruit choice \emph{peach} with \emph{brick}. Thus the 4/40 to 5/40 change includes a regression. The eight open responses in this set lack semantic ratings.
+
+\section{Discussion}
+\paragraph{What can be attributed to an edit?}
+The matched-row control identifies a direct effect on markup. The norm-only control shows how reducing confidence in wrong predictions can improve perplexity while leaving the greedy choice intact at a given state. The matched rollback provides evidence that protecting a span of useful inputs preserved more of the targeted trajectories than a uniform rollback of the same magnitude. It also reveals the limit of that protection when tested on other trajectories. The R3-to-R5 narrative reversal involved a different set of interventions, including many corpus-derived targets and a trained teacher. That endpoint cannot establish how much of the gain would be attainable by inspecting weights alone, or how much came from any one late-stage operation.
+
+\paragraph{What transferred beyond development?}
+R5's improvement was uniform at the story level and survived removal of the 1,100 selection stories. This supports transfer to other examples from the fitting domain. TinyStories has a restricted vocabulary, recurring narrative patterns and a teacher trained for the same distribution. Exact-duplicate filtering cannot exclude related plots or paraphrases. The generality of this improvement is therefore unresolved. BLiMP compares sentence probabilities across grammatical contrasts and COPA tests relative preference for causal continuations. Neither showed a comparable gain. The 5,501 gains and 5,259 losses on BLiMP further show that a small change in total accuracy can coexist with a large change in which items the model solves.
+
+\paragraph{Selection and measurement limits.}
+The experiments concern one model family, and full external scores from earlier candidates influenced subsequent choices. Excluding directly reused items leaves that adaptive selection history in place. The bootstrap intervals describe within-benchmark sampling variation and do not account for selection. Many dialogue prompts are correlated through paraphrases or shared templates. Exact matching can reward a punctuation change, and both repetition detectors can miss fluent but irrelevant answers. The post-freeze set is small and drawn from familiar task families. A stronger test would use a new text domain, varied decoding conditions and blinded semantic ratings of independently written prompts. Comparing with gradient fine-tuning on the same examples, teacher predictions and preservation data would be necessary to assess relative efficiency.
+
+\section{Conclusion}
+In MiniMind2 Q4, a targeted edit could remove a conspicuous failure while degrading next-token prediction on every story tested. Reintroducing narrative evidence through analytical fits and offline distillation reversed that degradation and preserved known short answers on replay. It also lowered perplexity on additional stories from the same domain. The modest grammatical preference change, flat causal-choice accuracy and mixed post-freeze answers bound the empirical claim: this experiment demonstrates in-domain prediction gains and measurable control of specific generated patterns. Whether the same procedure restores broader English competence remains open.
+
+\paragraph{Code and model availability.}
+The experiment and its results are documented in the \projectrepo. The edited GGUF checkpoints and their model card are available in the \modelrepo. The initial manuscript was drafted in OpenResearch with GPT-6.2 Astra using the high reasoning setting.
+
+\begin{thebibliography}{12}\small
+\bibitem[Gong(2025)]{minimind} Jingyao Gong. \href{https://github.com/jingyaogong/minimind}{MiniMind}. Model implementation and \href{https://huggingface.co/jingyaogong/MiniMind2}{MiniMind2 checkpoint collection}.
+\bibitem[Takehi et al.(2026)]{takehi} Rikiya Takehi, Jayden Teoh, Alex Zhang and Omar Khattab. \href{https://rikiyat.github.io/blog/weight-space-programming/}{Sparks of Weight-Space Programming: LLMs can natively read \& write neural network weights}. Research blog, 2026.
+\bibitem[Zhang et al.(2026)]{zhang} Jusheng Zhang, Keze Wang and Liang Lin. \href{https://arxiv.org/abs/2611.09376}{Can LLMs Debug Robots by Editing Their Weights?} arXiv:2611.09376, 2026.
+\bibitem[Meng et al.(2022)]{rome} Kevin Meng, David Bau, Alex Andonian and Yonatan Belinkov. \href{https://arxiv.org/abs/2202.05262}{Locating and Editing Factual Associations in GPT}. NeurIPS, 2022.
+\bibitem[Fang et al.(2025)]{alphaedit} Junfeng Fang, Houcheng Jiang, Kun Wang, Yunshan Ma, Shi Jie, Xiang Wang, Xiangnan He and Tat-seng Chua. \href{https://arxiv.org/abs/2410.02355}{AlphaEdit: Null-Space Constrained Knowledge Editing for Language Models}. ICLR, 2025.
+\bibitem[Hinton et al.(2015)]{hinton} Geoffrey Hinton, Oriol Vinyals and Jeff Dean. \href{https://arxiv.org/abs/1503.02531}{Distilling the Knowledge in a Neural Network}. arXiv:1503.02531, 2015.
+\bibitem[Eldan and Li(2023)]{tiny} Ronen Eldan and Yuanzhi Li. \href{https://arxiv.org/abs/2305.07759}{TinyStories: How Small Can Language Models Be and Still Speak Coherent English?} arXiv:2305.07759, 2023.
+\bibitem[Warstadt et al.(2020)]{blimp} Alex Warstadt, Alicia Parrish, Haokun Liu, Anhad Mohananey, Wei Peng, Sheng-Fu Wang and Samuel R. Bowman. \href{https://doi.org/10.1162/tacl_a_00321}{BLiMP: The Benchmark of Linguistic Minimal Pairs for English}. \emph{Transactions of the Association for Computational Linguistics}, 8, 377--392, 2020.
+\bibitem[Roemmele et al.(2011)]{copa} Melissa Roemmele, Cosmin Adrian Bejan and Andrew S. Gordon. \href{https://asgordon.github.io/copa.html}{Choice of Plausible Alternatives: An Evaluation of Commonsense Causal Reasoning}. AAAI Spring Symposium on Logical Formalizations of Commonsense Reasoning, 2011.
+\bibitem[Sentence Transformers(n.d.)]{encoder} Sentence Transformers. \href{https://huggingface.co/sentence-transformers/paraphrase-MiniLM-L3-v2}{paraphrase-MiniLM-L3-v2}. Frozen English sentence encoder, model card.
+\bibitem[Eldan(2023)]{teacher} Ronen Eldan. \href{https://huggingface.co/roneneldan/TinyStories-33M/tree/2ad0a164221b7c4d21cac7c46aec74f6f98dbfc8}{TinyStories-33M}. Frozen teacher checkpoint.
+\end{thebibliography}
+\end{document}

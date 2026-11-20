@@ -1,0 +1,229 @@
+{
+  "tinystories": {
+    "full": {
+      "items": 21990,
+      "tokens": 6244062,
+      "ppl": {
+        "original": 24.52427558,
+        "r3": 214.47758753,
+        "r4": 17.61505038,
+        "r5": 11.9811757
+      },
+      "r5_lower_loss": {
+        "original": 21990,
+        "r4": 21990
+      }
+    },
+    "outside_selection": {
+      "items": 20890,
+      "tokens": 5928265,
+      "ppl": {
+        "original": 24.51633448,
+        "r3": 214.41896126,
+        "r4": 17.6022738,
+        "r5": 11.97132025
+      },
+      "r5_lower_loss": {
+        "original": 20890,
+        "r4": 20890
+      }
+    }
+  },
+  "blimp": {
+    "full": {
+      "pairs": 67000,
+      "correct": {
+        "original": 39658,
+        "r3": 36571,
+        "r4": 40210,
+        "r5": 39900
+      },
+      "r5_vs": {
+        "original": {
+          "gained": 5501,
+          "lost": 5259
+        },
+        "r4": {
+          "gained": 4107,
+          "lost": 4417
+        }
+      }
+    },
+    "outside_selection": {
+      "pairs": 63315,
+      "correct": {
+        "original": 37442,
+        "r3": 34564,
+        "r4": 37954,
+        "r5": 37662
+      },
+      "r5_vs": {
+        "original": {
+          "gained": 5184,
+          "lost": 4964
+        },
+        "r4": {
+          "gained": 3867,
+          "lost": 4159
+        }
+      }
+    }
+  },
+  "copa": {
+    "items": 500,
+    "correct": {
+      "original": 252,
+      "r3": 253,
+      "r4": 253,
+      "r5": 251
+    },
+    "r5_vs": {
+      "original": {
+        "gained": 41,
+        "lost": 42
+      },
+      "r4": {
+        "gained": 29,
+        "lost": 31
+      }
+    }
+  },
+  "index": {
+    "original": 1.0,
+    "r3": 0.47305695,
+    "r4": 1.1232554,
+    "r5": 1.27058583
+  },
+  "internal": {
+    "historical360": {
+      "items": 360,
+      "scorable": 308,
+      "correct": {
+        "r4": 74,
+        "r5": 88
+      },
+      "r5_vs_r4": {
+        "gained": 14,
+        "lost": 0
+      },
+      "detector_hits": {
+        "word_loop": {
+          "r4": 0,
+          "r5": 0
+        },
+        "character_loop": {
+          "r4": 0,
+          "r5": 0
+        },
+        "empty": {
+          "r4": 0,
+          "r5": 0
+        }
+      }
+    },
+    "additional32": {
+      "items": 32,
+      "scorable": 24,
+      "correct": {
+        "r4": 2,
+        "r5": 2
+      },
+      "r5_vs_r4": {
+        "gained": 0,
+        "lost": 0
+      },
+      "detector_hits": {
+        "word_loop": {
+          "r4": 0,
+          "r5": 0
+        },
+        "character_loop": {
+          "r4": 0,
+          "r5": 0
+        },
+        "empty": {
+          "r4": 0,
+          "r5": 0
+        }
+      }
+    },
+    "postfreeze48": {
+      "items": 48,
+      "scorable": 40,
+      "correct": {
+        "r4": 4,
+        "r5": 5
+      },
+      "r5_vs_r4": {
+        "gained": 2,
+        "lost": 1
+      },
+      "detector_hits": {
+        "word_loop": {
+          "r4": 0,
+          "r5": 0
+        },
+        "character_loop": {
+          "r4": 0,
+          "r5": 0
+        },
+        "empty": {
+          "r4": 0,
+          "r5": 0
+        }
+      }
+    },
+    "strict96": {
+      "items": 96,
+      "scorable": 96,
+      "correct": {
+        "r4": 9,
+        "r5": 12
+      },
+      "r5_vs_r4": {
+        "gained": 3,
+        "lost": 0
+      },
+      "detector_hits": {
+        "word_loop": {
+          "r4": 0,
+          "r5": 0
+        },
+        "character_loop": {
+          "r4": 0,
+          "r5": 0
+        },
+        "empty": {
+          "r4": 0,
+          "r5": 0
+        }
+      }
+    },
+    "copy72": {
+      "items": 72,
+      "scorable": 72,
+      "correct": {
+        "r4": 48,
+        "r5": 52
+      },
+      "r5_vs_r4": {
+        "gained": 4,
+        "lost": 0
+      },
+      "detector_hits": {
+        "word_loop": {
+          "r4": 0,
+          "r5": 0
+        },
+        "character_loop": {
+          "r4": 0,
+          "r5": 0
+        },
+        "empty": {
+          "r4": 0,
+          "r5": 0
+        }
+      }
+    }
+  }
+}
